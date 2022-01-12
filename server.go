@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	_ "github.com/lib/pq"
+	routes "example.com/example/routes"
 )
 
 func Check(err error) {
@@ -32,6 +32,17 @@ func AddTable(db *sql.DB) sql.Result {
 	return result
 }
 
+func PostUser(db *sql.DB) sql.Result {
+	query := `
+	INSERT INTO users(username, password)
+	VALUES('test123', 'test123');
+`
+
+	result, _ := db.Exec(query)
+
+	return result
+}
+
 func main() {
 	os.Setenv("MOOCDSN", "postgres://bucketeer:bucketeer_pass@db/bucketeer_db?sslmode=disable")
 
@@ -43,6 +54,17 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, you've requested: %s\n", r.URL.Path)
+	})
+
+	http.HandleFunc("/users/post", func(w http.ResponseWriter, r *http.Request) {
+		PostUser(db)
+		fmt.Fprint(w, "Hello, you've added a user")
+	})
+
+	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+		users := routes.GetUsers(db)
+
+		fmt.Fprint(w, users)
 	})
 
 	http.ListenAndServe(":8080", nil)
